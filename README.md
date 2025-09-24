@@ -52,39 +52,40 @@ Designed for educational and cybersecurity competition environments to test comm
 ## Usage Instructions
 Start the C2 Server:
 
-sudo python3 server.py
+    sudo python3 server.py
 
 
 Opens an operator console with commands:
 
-  list – Show active agents
-  
-  task <agent_id> <command> – Queue a command for an agent
-  
-  results <agent_id> – View collected results from an agent
-  
-  exit – Stop the server
+    list – Show active agents
+
+    task <agent_id> <command> – Queue a command for an agent
+
+    results <agent_id> – View collected results from an agent
+
+    exit – Stop the server
 
 
 Start the Client Agent:
 
-  sudo python3 client_agent.py
+    sudo python3 client_agent.py
 
 
 Beacons to the C2 server automatically.
 Executes queued commands and returns results.
 
 Example Workflow:
--Launch the server.
--Launch one or more agents on separate lab VMs.
--Use list to see active agents.
--Queue a command (with example agent id):
 
-  task a1b2 whoami
+    -Launch the server.
+    -Launch one or more agents on separate lab VMs.
+    -Use list to see active agents.
+    -Queue a command (with example agent id):
 
--Retrieve results (with example agent id):
+    task a1b2 whoami
 
-  results a1b2
+    -Retrieve results (with example agent id):
+
+    results a1b2
 
 
 Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
