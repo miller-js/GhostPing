@@ -20,7 +20,6 @@ Designed for educational and cybersecurity competition environments to test comm
 - [Technologies Used](#technologies-used)
 - [Installation Instructions](#installation-instructions)
 - [Usage Instructions](#usage-instructions)
-- [Authors and Acknowledgments](#authors-and-acknowledgments)
 
 ---
 
@@ -82,7 +81,7 @@ Example Workflow:
 
 Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
 
-## Authors
+## Author
 
 Author: Miller Swank
 Contact: millerswank@gmail.com
