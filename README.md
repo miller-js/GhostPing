@@ -54,6 +54,7 @@ Start the C2 Server:
 
 sudo python3 server.py
 
+
 Opens an operator console with commands:
 
   list – Show active agents
@@ -64,9 +65,11 @@ Opens an operator console with commands:
   
   exit – Stop the server
 
+
 Start the Client Agent:
 
   sudo python3 client_agent.py
+
 
 Beacons to the C2 server automatically.
 Executes queued commands and returns results.
