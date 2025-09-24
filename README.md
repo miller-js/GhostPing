@@ -21,7 +21,6 @@ Designed for educational and cybersecurity competition environments to test comm
 - [Installation Instructions](#installation-instructions)
 - [Usage Instructions](#usage-instructions)
 - [Authors and Acknowledgments](#authors-and-acknowledgments)
-- [Contact Information](#contact-information)
 
 ---
 
@@ -37,17 +36,17 @@ Designed for educational and cybersecurity competition environments to test comm
 ## Installation Instructions
 1. Clone the repository:
 
-git clone https://github.com/miller-js/ICMP-Tunneler-C2/
+    git clone https://github.com/miller-js/ICMP-Tunneler-C2/
 
-(or just download files as needed)
+  (or just download files as needed)
 
 2. Ensure Python 3 is installed:
 
-python3 --version
+    python3 --version
 
 3. Install required libraries:
 
-pip install scapy
+    pip install scapy
 
 4. Run the server and client in a lab or isolated VM environment (requires root privileges for raw socket access).
 
@@ -57,33 +56,35 @@ sudo python3 server.py
 
 Opens an operator console with commands:
 
-list – Show active agents
-task <agent_id> <command> – Queue a command for an agent
-results <agent_id> – View collected results from an agent
-exit – Stop the server
+  list – Show active agents
+  task <agent_id> <command> – Queue a command for an agent
+  results <agent_id> – View collected results from an agent
+  exit – Stop the server
 
 Start the Client Agent:
-sudo python3 client_agent.py
+  sudo python3 client_agent.py
 
 Beacons to the C2 server automatically.
 Executes queued commands and returns results.
 
 Example Workflow:
-Launch the server.
-Launch one or more agents on separate lab VMs.
-Use list to see active agents.
+-Launch the server.
+-Launch one or more agents on separate lab VMs.
+-Use list to see active agents.
+-Queue a command (with example agent id):
 
-Queue a command:
+  task a1b2 whoami
 
-task a1b2 whoami
+-Retrieve results (with example agent id):
 
-Retrieve results:
-
-results a1b2
+  results a1b2
 
 
 Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
 
-## Authors and Acknowledgments
+## Authors
 
-Author: Miller J. Swank
+Author: Miller Swank
+Contact: millerswank@gmail.com
+LinkedIn: linkedin.com/in/miller-swank
+GitHub: github.com/miller-js
