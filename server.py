@@ -1,4 +1,11 @@
-# c2_server.py
+"""
+Author: Miller Swank
+Date: 2025-09-24
+Description: ICMP C2 server for educational cybersecurity testing and competitions.
+             Handles agent beacons, command queueing, and result collection.
+Note: For lab/competition purposes only. Do not run in production environments.
+"""
+
 from scapy.all import *
 import threading
 import time
@@ -123,5 +130,6 @@ def start_c2():
 
 if __name__ == "__main__":
     start_c2()
+
 
 
