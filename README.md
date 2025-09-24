@@ -51,16 +51,21 @@ Designed for educational and cybersecurity competition environments to test comm
 
 ## Usage Instructions
 Start the C2 Server:
+
 sudo python3 server.py
 
 Opens an operator console with commands:
 
   list – Show active agents
+  
   task <agent_id> <command> – Queue a command for an agent
+  
   results <agent_id> – View collected results from an agent
+  
   exit – Stop the server
 
 Start the Client Agent:
+
   sudo python3 client_agent.py
 
 Beacons to the C2 server automatically.
