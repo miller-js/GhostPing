@@ -21,7 +21,7 @@ import sys
 
 # ====== CONFIGURATION ======
 C2_IP = "192.168.10.50"   # C2 server IP
-BEACON_INTERVAL = 5        # seconds between beacons
+BEACON_INTERVAL = 120        # seconds between beacons
 AGENT_ID = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
 SEQ = 0
 
@@ -114,6 +114,7 @@ if __name__ == "__main__":
         beacon_loop()
     except KeyboardInterrupt:
         graceful_exit()
+
 
 
 
