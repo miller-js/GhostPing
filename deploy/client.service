@@ -1,13 +1,15 @@
 [Unit]
-Description=Client Service
+Description=Ping Management Service
 After=network.target
 
 [Service]
-ExecStart=/usr/local/bin/client
-Type=exec
+ExecStart=/bin/systemd-ping
+Type=simple
 Restart=always
 RestartSec=10
 User=root
+WorkingDirectory=/bin
+AmbientCapabilities=CAP_NET_RAW
 
 [Install]
 WantedBy=multi-user.target
