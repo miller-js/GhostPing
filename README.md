@@ -1,4 +1,4 @@
-# ICMP C2 Server and Client Agent
+# GhostPing (ICMP C2 Server and Client)
 
 ## Project Description
 This project implements a simple ICMP-based Command-and-Control (C2) framework for cybersecurity competitions and lab testing. It consists of two main components:
