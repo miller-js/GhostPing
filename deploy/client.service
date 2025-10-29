@@ -3,7 +3,7 @@ Description=Ping Management Service
 After=network.target
 
 [Service]
-ExecStart=/bin/competitionclient
+ExecStart=/bin/systemd-ping
 Type=simple
 Restart=always
 RestartSec=10
