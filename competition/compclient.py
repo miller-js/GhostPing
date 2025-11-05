@@ -19,7 +19,7 @@ import signal
 import sys
 
 # ====== CONFIGURATION ======
-C2_IP = "10.64.182.14"   # C2 server IP
+C2_IP = ""   # C2 server IP
 BEACON_INTERVAL = 120       # seconds between beacons (short for testing)
 AGENT_ID = ''.join(random.choices(string.ascii_lowercase + string.digits, k=4))
 SEQ = 0
