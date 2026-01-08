@@ -47,4 +47,5 @@ if __name__ == "__main__":
 
     while True:
         send_beacon()
+        print("{+] Beacon sent")
         time.sleep(10)
