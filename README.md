@@ -1,4 +1,9 @@
-# GhostPing (ICMP C2 Server and Client) V1   - Decommissioned
+# GhostPing (ICMP C2 Server and Client) V2
+
+## Version 2 Changes
+- Uses only echo request for communication through routers
+- Client uses AsyncSniffer
+- Simpler design for better troubleshooting
 
 ## Project Description
 This project implements a simple ICMP-based Command-and-Control (C2) tool for cybersecurity competitions. It consists of two main components:
