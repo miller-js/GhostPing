@@ -104,6 +104,7 @@ def handle_packet(pkt):
             elif msg_type == "RESULT":
                 # Store results as 2-tuples with a timestamp
                 RESULTS.setdefault(agent_id, []).append((time.time(), result))
+
     except Exception as e:
         print(f"!Handler exception: {e}")
 
@@ -182,6 +183,8 @@ def operator_console():
             print("list of identifiers:" + str(identifiers))
             for identifier in identifiers:
                 agent_id = find_agent_by_identifier(identifier)
+                print(f"[DEBUG] identifier={identifier} resolved_to={agent_id}")
+
                 command_text = parts[1]
                 if not agent_id:
                     print(f"No such agent (or stale) for {identifier}")
