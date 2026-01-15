@@ -64,9 +64,13 @@ Opens an operator console with commands:
 
     list – Show active agents
 
-    task <agent_id> <command> – Queue a command for an agent
+    info <agent_id|ip> - Display information on an agent
 
-    results <agent_id> – View collected results from an agent
+    task <agent_id|ip list> <command> – Queue a command for an agent or list of agents
+
+    task all <command> - Queue a command for all active agents
+
+    results <agent_id|ip> – View collected results from an agent
 
     exit – Stop the server
 
@@ -75,7 +79,7 @@ Start the Client Agent:
 
     sudo python3 v2/clientv2.py
 
-For competition deployment, use deploy/linuxdeploy.yml
+For competition deployment, use deploy/deployv2.yml
 
 
 Beacons to the C2 server automatically.
@@ -86,9 +90,9 @@ Example Workflow:
     -Launch the server.
     -Launch one or more agents on separate lab VMs.
     -Use list to see active agents.
-    -Queue a command (with example agent id):
+    -Queue a command for multiple agents (example):
 
-    task 001 id
+    task 001,002 id
 
     -Retrieve results (with example agent id):
 
