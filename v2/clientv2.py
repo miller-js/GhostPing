@@ -3,8 +3,6 @@ import time
 import socket
 
 SERVER_IP = "192.168.10.50"
-LOCAL_IP = get_local_ip()
-
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -15,6 +13,8 @@ def get_local_ip():
     finally:
         s.close()
     return ip
+
+LOCAL_IP = get_local_ip()
 
 def send_beacon():
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/"BEACON|ThisIsABeacon".encode()
