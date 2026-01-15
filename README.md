@@ -1,6 +1,7 @@
 # GhostPing (ICMP C2 Server and Client) V2
 
 ## Version 2 Changes
+- Server can send tasks to some or all agents at the same time
 - Uses only echo request for more reliable communication through routers
 - Client uses AsyncSniffer
 - Simpler design for better troubleshooting
