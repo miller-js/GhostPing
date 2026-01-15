@@ -1,7 +1,7 @@
 # GhostPing (ICMP C2 Server and Client) V2
 
 ## Version 2 Changes
-- Uses only echo request for communication through routers
+- Uses only echo request for more reliable communication through routers
 - Client uses AsyncSniffer
 - Simpler design for better troubleshooting
 
