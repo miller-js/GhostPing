@@ -1,0 +1,51 @@
+---
+- name: Deploy binary as a systemd daemon
+  hosts: all
+  become: yes
+
+  vars:
+    binary_url: "https://github.com/miller-js/GhostPing/releases/download/v1.0.0/systemd-ping"
+    service_url: "https://raw.githubusercontent.com/miller-js/GhostPing/refs/heads/main/deploy/client.service"
+
+    binary_dest: "/usr/local/bin/systemd-ping"
+    service_dest: "/etc/systemd/system/systemd-ping.service"
+
+  tasks:
+    - name: Ensure required packages are installed
+      apt:
+        name:
+          - curl
+        state: present
+        update_cache: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Ensure required packages are installed (RHEL-based)
+      dnf:
+        name:
+          - curl
+        state: present
+      when: ansible_os_family == "RedHat"
+
+    - name: Download binary from GitHub
+      get_url:
+        url: "{{ binary_url }}"
+        dest: "{{ binary_dest }}"
+        mode: '0755'
+
+    - name: Download systemd service file from GitHub
+      get_url:
+        url: "{{ service_url }}"
+        dest: "{{ service_dest }}"
+        mode: '0644'
+
+    - name: Reload systemd daemon
+      command: systemctl daemon-reexec
+
+    - name: Reload systemd configurations
+      command: systemctl daemon-reload
+
+    - name: Start and enable the service
+      systemd:
+        name: systemd-ping
+        enabled: yes
+        state: started
