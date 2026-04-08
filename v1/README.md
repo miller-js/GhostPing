@@ -1,24 +1,18 @@
-# GhostPing (ICMP C2 Server and Client) V2
-
-## Version 2 Changes
-- Server can send tasks to some or all agents at the same time
-- Uses only echo request for more reliable communication through routers
-- Client uses AsyncSniffer
-- Simpler design for better troubleshooting
+# GhostPing (ICMP C2 Server and Client) V1   - Decommissioned
 
 ## Project Description
-This project implements a simple ICMP-based Command-and-Control (C2) tool for cybersecurity competitions. It consists of two main components:
+This project implements a simple ICMP-based Command-and-Control (C2) framework for cybersecurity competitions and lab testing. It consists of two main components:
 
 - **C2 Server**: Manages agent beacons, queues commands, and collects results.
 - **Client Agent**: Beacons to the C2 server, executes commands, and returns output.
 
 **Purpose:**  
-This tool is designed for educational cybersecurity competition environments to test command-and-control techniques, covert communication, and remote command execution over ICMP.
+Designed for educational and cybersecurity competition environments to test command-and-control techniques, covert communication, and remote command execution over ICMP.
 
 **Key Features:**
 - Multiple agent support
 - Lazy pruning of inactive agents
-- Command queueing and result collection
+- Reliable command queueing and result collection
 - Sequence-based result ordering
 ---
 
@@ -34,14 +28,14 @@ This tool is designed for educational cybersecurity competition environments to 
 - **Scapy** – for crafting and sniffing ICMP packets
 - **Threading** – for concurrent server operations
 - **Subprocess** – for executing shell commands on client agents
-- **Standard Python libraries** – `os`, `time`, `string`
+- **Standard Python libraries** – `os`, `time`, `random`, `string`
 
 ---
 
 ## Installation Instructions
 1. Clone the repository:
 
-    git clone https://github.com/miller-js/GhostPing/
+    git clone https://github.com/miller-js/ICMP-Tunneler-C2/
 
   (or just download files as needed)
 
@@ -58,29 +52,25 @@ This tool is designed for educational cybersecurity competition environments to 
 ## Usage Instructions
 Start the C2 Server:
 
-    sudo python3 v2/serverv2.py
+    sudo python3 server.py
 
 
 Opens an operator console with commands:
 
     list – Show active agents
 
-    info <agent_id|ip> - Display information on an agent
+    task <agent_id> <command> – Queue a command for an agent
 
-    task <agent_id|ip list> <command> – Queue a command for an agent or list of agents
-
-    task all <command> - Queue a command for all active agents
-
-    results <agent_id|ip> – View collected results from an agent
+    results <agent_id> – View collected results from an agent
 
     exit – Stop the server
 
 
 Start the Client Agent:
 
-    sudo python3 v2/clientv2.py
+    sudo python3 client_agent.py
 
-For competition deployment, use deploy/deployv2.yml
+For competition deployment, use deploy/linuxdeploy.yml
 
 
 Beacons to the C2 server automatically.
@@ -91,13 +81,13 @@ Example Workflow:
     -Launch the server.
     -Launch one or more agents on separate lab VMs.
     -Use list to see active agents.
-    -Queue a command for multiple agents (example):
+    -Queue a command (with example agent id):
 
-    task 001,002 id
+    task a1b2 whoami
 
     -Retrieve results (with example agent id):
 
-    results 001
+    results a1b2
 
 
 Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
