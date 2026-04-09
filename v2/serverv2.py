@@ -64,13 +64,13 @@ def handle_packet(pkt):
             if "|" not in payload:
                 return
 
-            msg_type, result = payload.split("|", 1)
+            msg_type, client_ip, result = payload.split("|", 2)
 
             # Only accept packets with custom payloads
             if msg_type != "BEACON" and msg_type != "RESULT":
                 return  # ignore noise or non-client pings
 
-            src = result
+            src = client_ip
 
             # Check if this IP is already registered
             agent_id = None
