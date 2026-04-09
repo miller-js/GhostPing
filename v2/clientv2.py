@@ -29,7 +29,7 @@ LOCAL_IP = get_local_ip()
 
 def send_beacon():
     # include local IP in payload for server to parse
-    payload = f"BEACON|{LOCAL_IP}".encode()
+    payload = f"BEACON|{LOCAL_IP}|ThisIsABeacon".encode()
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
 
