@@ -56,16 +56,6 @@ def run_task(cmd):
     except Exception as e:
         result_bytes = str(e).encode(errors="ignore")
 
-    def run_task(cmd):
-    MAX_PAYLOAD = 1460
-    PREFIX = b"RESULT|"
-
-    try:
-        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
-        result_bytes = output
-    except Exception as e:
-        result_bytes = str(e).encode(errors="ignore")
-
     # Include client IP
     ip_bytes = LOCAL_IP.encode()
 
