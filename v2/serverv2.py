@@ -70,9 +70,7 @@ def handle_packet(pkt):
             if msg_type != "BEACON" and msg_type != "RESULT":
                 return  # ignore noise or non-client pings
 
-            src = pkt[IP].src
-
-            # print(f"\n[+] Valid client packet from {src}: {payload}")
+            src = result
 
             # Check if this IP is already registered
             agent_id = None
