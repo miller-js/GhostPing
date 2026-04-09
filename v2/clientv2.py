@@ -14,14 +14,16 @@ from scapy.sendrecv import send, AsyncSniffer
 SERVER_IP = "192.168.10.170"
 
 def get_local_ip():
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
-        # Doesn't need to reach the address; no packets are sent.
-        s.connect(("8.8.8.8", 80))
-        ip = s.getsockname()[0]
-    finally:
-        s.close()
-    return ip
+        ip = subprocess.check_output(
+            ["hostname", "-I"],
+            text=True
+        ).strip().split()[0]
+
+        return ip
+    except Exception as e:
+        print(f"[!] Failed to get local IP: {e}")
+        return None
 
 LOCAL_IP = get_local_ip()
 
