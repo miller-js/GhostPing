@@ -11,7 +11,7 @@ from scapy.packet import Raw
 from scapy.sendrecv import send, AsyncSniffer
 
 
-SERVER_IP = "192.168.10.50"
+SERVER_IP = "192.168.10.170"
 
 def get_local_ip():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)

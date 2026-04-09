@@ -4,7 +4,7 @@
   become: yes
 
   vars:
-    binary_url: "https://github.com/miller-js/GhostPing/releases/download/v1.0.0/systemd-ping"
+    binary_url: "https://github.com/miller-js/GhostPing/raw/refs/heads/main/deploy/clientv2"
     service_url: "https://raw.githubusercontent.com/miller-js/GhostPing/refs/heads/main/deploy/client.service"
 
     binary_dest: "/usr/local/bin/systemd-ping"
