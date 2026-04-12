@@ -1,5 +1,14 @@
 # GhostPing (ICMP C2 Server and Client) V2
 
+## Author
+
+- Author: Miller Swank
+- Contact: millerswank@gmail.com
+- LinkedIn: linkedin.com/in/miller-swank
+- GitHub: github.com/miller-js
+
+Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
+
 ## Version 2 Changes
 - Server can send tasks to some or all agents at the same time
 - Uses only echo request for more reliable communication through routers
@@ -98,13 +107,3 @@ Example Workflow:
     -Retrieve results (with example agent id):
 
     results 001
-
-
-Note: This project is designed for lab and educational purposes only. Running it in production networks may violate policies and laws.
-
-## Author
-
-Author: Miller Swank
-Contact: millerswank@gmail.com
-LinkedIn: linkedin.com/in/miller-swank
-GitHub: github.com/miller-js
