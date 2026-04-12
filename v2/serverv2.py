@@ -1,5 +1,5 @@
 # Author: Miller Swank
-# GhostPing Server V2
+# Ghost Server V2
 
 from scapy.all import *
 import time
@@ -111,7 +111,7 @@ def operator_console():
 
     while True:
         try:
-            cmd_line = console.input("[bold red]GhostPing> [/bold red]").strip()
+            cmd_line = console.input("[bold red]Ghost> [/bold red]").strip()
         except (EOFError, KeyboardInterrupt):
             console.print("\n[red][*] Exiting.[/red]")
             os._exit(0)
@@ -264,12 +264,11 @@ def operator_console():
 def main():
 
     banner = r"""
-   ________               __  ____  _            
-  / ____/ /_  ____  _____/ /_/ __ \(_)___  ____ _
- / / __/ __ \/ __ \/ ___/ __/ /_/ / / __ \/ __ `/
-/ /_/ / / / / /_/ (__  ) /_/ ____/ / / / / /_/ / 
-\____/_/ /_/\____/____/\__/_/   /_/_/ /_/\__, /  
-                                        /____/  
+   ________               __
+  / ____/ /_  ____  _____/ /_
+ / / __/ __ \/ __ \/ ___/ __/
+/ /_/ / / / / /_/ (__  ) /_
+\____/_/ /_/\____/____/\__/  
     """
 
     console.print(Panel.fit(
