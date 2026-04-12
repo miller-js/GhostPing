@@ -1,5 +1,5 @@
 # Author: Miller Swank
-# GhostPing Client V2
+# Ghost Client V2
 # This program is intended for competitions with the RITSEC Red Team.
 # This program is the same as clientv2.py, but it makes HTTP requests to pwnboard, 
 # an application that displays Red Team access during live competition.
