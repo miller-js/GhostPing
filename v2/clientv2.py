@@ -1,5 +1,5 @@
 # Author: Miller Swank
-# GhostPing Client V2
+# Ghost Client V2
 # This program is intended for lab or competition use only.
 
 import time
