@@ -1,4 +1,4 @@
-# GhostPing (ICMP C2 Server and Client) V2
+# Ghost (ICMP C2 Server and Client)
 
 ## Author
 
@@ -50,7 +50,7 @@ This tool is designed for educational cybersecurity competition environments to 
 ## Installation Instructions
 1. Clone the repository:
 
-    git clone https://github.com/miller-js/GhostPing/
+    git clone https://github.com/miller-js/Ghost/
 
   (or just download files as needed)
 
