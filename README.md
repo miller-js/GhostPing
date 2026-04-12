@@ -89,9 +89,6 @@ Start the Client Agent:
 
     sudo python3 v2/clientv2.py
 
-For competition deployment, use deploy/deployv2.yml
-
-
 Beacons to the C2 server automatically.
 Executes queued commands and returns results.
 
