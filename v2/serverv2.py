@@ -151,7 +151,7 @@ def operator_console():
                 if not ACTIVE_AGENTS:
                     console.print("[yellow]No active agents.[/yellow]")
                 else:
-                    table = Table(title="Active agents ({len(ACTIVE_AGENTS)})")
+                    table = Table(title=f"Active agents ({len(ACTIVE_AGENTS)})")
 
                     table.add_column("ID", style="green")
                     table.add_column("IP", style="yellow")
